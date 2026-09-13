@@ -1,8 +1,19 @@
-import React from "react";
-import { Play, Star, Calendar } from "lucide-react";
-import { Link } from "react-router-dom";
+"use client";
 
-const featuredMovies = [
+import React, { useState, useEffect } from "react";
+import { Play, Star, Calendar } from "lucide-react";
+import Link from "next/link";
+
+export interface FeaturedMovie {
+  id: number;
+  title: string;
+  rating: number;
+  releaseDate: string;
+  description: string;
+  image: string;
+}
+
+const featuredMovies: FeaturedMovie[] = [
   {
     id: 1,
     title: "Dune: Part Two",
@@ -26,9 +37,9 @@ const featuredMovies = [
 ];
 
 const Hero = () => {
-  const [currentMovie, setCurrentMovie] = React.useState(0);
+  const [currentMovie, setCurrentMovie] = useState(0);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const timer = setInterval(() => {
       setCurrentMovie((prev) => (prev + 1) % featuredMovies.length);
     }, 8000);
@@ -70,14 +81,14 @@ const Hero = () => {
           </p>
           <div className="flex items-center gap-4">
             <Link
-              to={`/movie/${movie.id}`}
+              href={`/movie/${movie.id}`}
               className="bg-yellow-500 text-black px-8 py-3 rounded-xl font-semibold flex items-center gap-2 hover:bg-yellow-400 transition-all hover:scale-105 duration-300"
             >
               <Play className="w-5 h-5" />
               Watch Trailer
             </Link>
             <Link
-              to={`/movie/${movie.id}`}
+              href={`/movie/${movie.id}`}
               className="bg-zinc-900/80 backdrop-blur-md text-white px-8 py-3 rounded-xl font-semibold hover:bg-zinc-800 transition-all hover:scale-105 duration-300"
             >
               More Info
@@ -89,6 +100,7 @@ const Hero = () => {
           {featuredMovies.map((_, index) => (
             <button
               key={index}
+              aria-label={`Slide ${index + 1}`}
               onClick={() => setCurrentMovie(index)}
               className={`h-1.5 rounded-full transition-all duration-300 ${
                 currentMovie === index

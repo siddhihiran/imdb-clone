@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS Custom Variables for Persistent Theming System */
+:root,
+[data-theme="dark"] {
+  --bg-primary: #000000;
+  --bg-surface: #0e0e11;
+  --bg-card: rgba(24, 24, 27, 0.7);
+  --bg-card-hover: rgba(39, 39, 42, 0.85);
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --accent-gold: #eab308;
+  --border-color: #27272a;
+  --ring-color: rgba(234, 179, 8, 0.4);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent-gold: #ca8a04;
+  --border-color: #e2e8f0;
+  --ring-color: rgba(202, 138, 4, 0.4);
+}
+
+[data-theme="high-contrast"] {
+  --bg-primary: #000000;
+  --bg-surface: #000000;
+  --bg-card: #000000;
+  --bg-card-hover: #18181b;
+  --text-primary: #ffffff;
+  --text-secondary: #ffff00;
+  --text-muted: #ffffff;
+  --accent-gold: #ffff00;
+  --border-color: #ffffff;
+  --ring-color: #ffff00;
+}
+
+@layer base {
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  /* When user prefers reduced motion, disable transitions */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .text-shadow {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+  
+  .text-glow {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+  }
+
+  [data-theme="light"] .text-glow {
+    text-shadow: none;
+  }
+
+  .hover-glow {
+    @apply transition-all duration-300;
+  }
+  
+  .hover-glow:hover {
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+  }
+
+  .gradient-mask {
+    mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  }
+}
+
+.movie-card-hover {
+  @apply transition-all duration-300;
+}
+
+.movie-card-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="high-contrast"] .movie-card-hover:hover {
+  outline: 2px solid #ffff00;
+}
