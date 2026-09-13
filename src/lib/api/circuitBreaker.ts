@@ -10,6 +10,13 @@ export interface CircuitBreakerOptions {
   halfOpenMaxSuccesses?: number;
 }
 
+export class CircuitBreakerOpenError extends Error {
+  constructor(message = "CircuitBreaker is OPEN - Request short-circuited to protect downstream service.") {
+    super(message);
+    this.name = "CircuitBreakerOpenError";
+  }
+}
+
 export class CircuitBreaker {
   private state: CircuitState = CircuitState.CLOSED;
   private failureCount = 0;
@@ -43,7 +50,7 @@ export class CircuitBreaker {
       if (fallback) {
         return await fallback();
       }
-      throw new Error(`CircuitBreaker is OPEN - Request short-circuited to protect downstream service.`);
+      throw new CircuitBreakerOpenError();
     }
 
     try {

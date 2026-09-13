@@ -80,6 +80,13 @@ export interface ActorItem {
     status: string;
     expectedRelease: string;
   }[];
+  alternateNames?: string[];
+  similarActors?: {
+    id: number;
+    name: string;
+    image: string;
+    match: string;
+  }[];
 }
 
 export const moviesData: MovieItem[] = [
@@ -373,6 +380,12 @@ export const actorsData: ActorItem[] = [
         expectedRelease: "2025",
       },
     ],
+    alternateNames: ["Timothee Chalamet", "ティモシー・シャラメ", "蒂莫西·柴勒梅德", "Тимоти Шаламе"],
+    similarActors: [
+      { id: 2, name: "Zendaya", image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80", match: "Co-star (Dune)" },
+      { id: 3, name: "Austin Butler", image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80", match: "Co-star (Dune Part Two)" },
+      { id: 4, name: "Florence Pugh", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80", match: "Co-star (Little Women)" },
+    ],
   },
   {
     id: 2,
@@ -453,5 +466,14 @@ export const actorsData: ActorItem[] = [
         expectedRelease: "2024",
       },
     ],
+    alternateNames: ["Zendaya Maree Stoermer Coleman", "ゼンデイヤ", "赞达亚", "Зендая"],
+    similarActors: [
+      { id: 1, name: "Timothée Chalamet", image: "https://images.unsplash.com/photo-1534809027769-b00d750a6bac?auto=format&fit=crop&w=400&q=80", match: "Co-star (Dune)" },
+      { id: 4, name: "Tom Holland", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80", match: "Co-star (Spider-Man)" },
+      { id: 5, name: "Hunter Schafer", image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80", match: "Co-star (Euphoria)" },
+    ],
   },
 ];
+
+export const mockActors = actorsData;
+

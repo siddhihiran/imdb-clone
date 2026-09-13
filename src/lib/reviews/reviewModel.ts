@@ -51,6 +51,13 @@ export interface ReviewRecord extends ReviewInput {
   downvotes: number;
   wilsonScore: number;
   isDeleted?: boolean;
+  idempotencyKey?: string;
+  revisionHistory?: {
+    title: string;
+    content: string;
+    rating: number;
+    editedAt: number;
+  }[];
   moderationFlags?: {
     flaggedBy: string;
     reason: string;

@@ -1,5 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { reviewSchema, calculateWilsonScore, ReviewRecord } from "@/lib/reviews/reviewModel";
+import { rateLimiter } from "@/lib/api/rateLimiter";
+
+// Idempotency cache: key -> ReviewRecord
+const idempotencyStore = new Map<string, ReviewRecord>();
+
+// Simple profanity list for content moderation filter
+const BANNED_WORDS = ["scam", "hate_speech_sample", "bot_abuse", "malware_link"];
+
+function containsProfanity(text: string): boolean {
+  const lower = text.toLowerCase();
+  return BANNED_WORDS.some((word) => lower.includes(word));
+}
 
 // In-memory persistent server store for reviews
 const globalReviews: ReviewRecord[] = [
@@ -69,14 +81,47 @@ export async function GET(request: NextRequest) {
     results.sort((a, b) => a.rating - b.rating);
   } else if (sort === "newest") {
     results.sort((a, b) => b.createdAt - a.createdAt);
+  } else if (sort === "controversial") {
+    results.sort((a, b) => {
+      const aTotal = a.upvotes + a.downvotes;
+      const bTotal = b.upvotes + b.downvotes;
+      const aDiff = Math.abs(a.upvotes - a.downvotes);
+      const bDiff = Math.abs(b.upvotes - b.downvotes);
+      const aControversy = aTotal / (aDiff + 1);
+      const bControversy = bTotal / (bDiff + 1);
+      return bControversy - aControversy;
+    });
   }
 
   return NextResponse.json(results);
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limiting check
+  if (!rateLimiter.isAllowed("review-submit")) {
+    return NextResponse.json(
+      { error: "Too many review submissions. Please wait a moment." },
+      { status: 429, headers: { "Retry-After": "2" } }
+    );
+  }
+
   try {
     const json = await request.json();
+
+    // Idempotency Key check to prevent double posts under flaky networks
+    const idempotencyKey =
+      request.headers.get("Idempotency-Key") || json.idempotencyKey;
+    if (idempotencyKey && idempotencyStore.has(idempotencyKey)) {
+      return NextResponse.json(idempotencyStore.get(idempotencyKey), { status: 200 });
+    }
+
+    // Profanity Filter check
+    if (containsProfanity(json.title || "") || containsProfanity(json.content || "")) {
+      return NextResponse.json(
+        { error: "Review violates community moderation standards (prohibited content detected)." },
+        { status: 422 }
+      );
+    }
 
     // Zod validation
     const parsed = reviewSchema.parse(json);
@@ -89,14 +134,20 @@ export async function POST(request: NextRequest) {
       upvotes: 1,
       downvotes: 0,
       wilsonScore: calculateWilsonScore(1, 0),
+      idempotencyKey,
+      revisionHistory: [],
     };
 
     globalReviews.unshift(newReview);
 
+    if (idempotencyKey) {
+      idempotencyStore.set(idempotencyKey, newReview);
+    }
+
     return NextResponse.json(newReview, { status: 201 });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.errors || error.message || "Invalid review data" },
+      { error: error.issues || error.errors || error.message || "Invalid review data" },
       { status: 400 }
     );
   }
@@ -113,12 +164,34 @@ export async function PUT(request: NextRequest) {
     }
 
     const existing = globalReviews[index];
+
+    // Profanity filter on updates
+    if (
+      (updates.title && containsProfanity(updates.title)) ||
+      (updates.content && containsProfanity(updates.content))
+    ) {
+      return NextResponse.json(
+        { error: "Updated review violates community moderation standards." },
+        { status: 422 }
+      );
+    }
+
     const parsed = reviewSchema.partial().parse(updates);
+
+    // Record revision history for diff-based tracking
+    const history = existing.revisionHistory || [];
+    history.push({
+      title: existing.title,
+      content: existing.content,
+      rating: existing.rating,
+      editedAt: Date.now(),
+    });
 
     const updatedReview: ReviewRecord = {
       ...existing,
       ...parsed,
       updatedAt: Date.now(),
+      revisionHistory: history,
     };
 
     globalReviews[index] = updatedReview;

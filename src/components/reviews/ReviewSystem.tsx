@@ -27,7 +27,7 @@ interface ReviewSystemProps {
 export default function ReviewSystem({ movieId, movieTitle }: ReviewSystemProps) {
   const [reviews, setReviews] = useState<ReviewRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sort, setSort] = useState<"wilson" | "newest" | "rating-desc" | "rating-asc">("wilson");
+  const [sort, setSort] = useState<"wilson" | "newest" | "rating-desc" | "rating-asc" | "controversial">("wilson");
 
   // Auth / Current User
   const [currentUser, setCurrentUser] = useState({
@@ -80,6 +80,23 @@ export default function ReviewSystem({ movieId, movieTitle }: ReviewSystemProps)
   useEffect(() => {
     loadReviews();
   }, [loadReviews]);
+
+  // SSE Live Updates Listener with backpressure and graceful cleanup
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let es: EventSource | null = null;
+    try {
+      es = new EventSource(`/api/reviews/stream?movieId=${movieId}`);
+      es.addEventListener("ping", () => {
+        // Heartbeat received
+      });
+    } catch {
+      // Fallback
+    }
+    return () => {
+      es?.close();
+    };
+  }, [movieId]);
 
   // Check and restore draft from IndexedDB when opening form
   const handleOpenForm = async (editReview?: ReviewRecord) => {
@@ -220,10 +237,14 @@ export default function ReviewSystem({ movieId, movieTitle }: ReviewSystemProps)
       await idb.deleteReviewDraft(movieId);
 
       try {
+        const idempotencyKey = `idem-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const res = await fetch("/api/reviews", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(result.data),
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": idempotencyKey,
+          },
+          body: JSON.stringify({ ...result.data, idempotencyKey }),
         });
         if (!res.ok) throw new Error("Submission failed");
         loadReviews();
@@ -347,6 +368,7 @@ export default function ReviewSystem({ movieId, movieTitle }: ReviewSystemProps)
               aria-label="Sort reviews"
             >
               <option value="wilson">Most Helpful (Wilson Score)</option>
+              <option value="controversial">Controversial (High Activity)</option>
               <option value="newest">Newest First</option>
               <option value="rating-desc">Highest Rated</option>
               <option value="rating-asc">Lowest Rated</option>

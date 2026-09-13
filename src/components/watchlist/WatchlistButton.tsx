@@ -140,6 +140,11 @@ export default function WatchlistButton({
           <Sparkles className="w-5 h-5 fill-current" />
         </motion.span>
       )}
+
+      {/* Screen Reader ARIA-Live status update */}
+      <span className="sr-only" role="status" aria-live="polite">
+        {inWatchlist ? `${movie.title} added to watchlist` : `${movie.title} removed from watchlist`}
+      </span>
     </motion.button>
   );
 }

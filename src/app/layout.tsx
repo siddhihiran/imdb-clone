@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import QueryProvider from "@/components/providers/QueryProvider";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { ThemeProvider, Theme } from "@/components/theme/ThemeProvider";
+import { WebVitalsReporter } from "@/components/telemetry/WebVitalsReporter";
 
 export const metadata: Metadata = {
   title: "MovieDB - Discover Movies & TV Shows",
@@ -32,6 +33,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-screen antialiased selection:bg-yellow-500 selection:text-black">
+        <WebVitalsReporter />
         <ThemeProvider initialTheme={initialTheme}>
           <QueryProvider>
             <Navbar />

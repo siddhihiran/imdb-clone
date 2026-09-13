@@ -1,5 +1,6 @@
 import React from "react";
-import { Award, Instagram, Star, Twitter, Film } from "lucide-react";
+import Link from "next/link";
+import { Award, Instagram, Star, Twitter, Film, Users } from "lucide-react";
 import { Metadata } from "next";
 import { movieApi } from "@/lib/api/client";
 import { requestCoalescer } from "@/lib/api/requestCoalescer";
@@ -59,8 +60,34 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
     image: m.image,
   }))) as FilmographyRecord[];
 
+  // JSON-LD Structured Data for Person
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: actor.name,
+    alternateName: actor.alternateNames || [actor.name],
+    image: actor.image,
+    birthDate: actor.birthDate,
+    birthPlace: actor.birthPlace,
+    nationality: actor.nationality,
+    height: actor.height,
+    jobTitle: "Actor",
+    description: actor.biography,
+    sameAs: [
+      actor.socialMedia?.instagram,
+      actor.socialMedia?.twitter,
+      actor.socialMedia?.imdb,
+    ].filter(Boolean),
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Structured Data (JSON-LD) for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* Hero Header */}
       <div className="relative h-[400px] mb-8 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
         <div
@@ -75,10 +102,25 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
             <img
               src={actor.image}
               alt={actor.name}
+              loading="eager"
+              fetchPriority="high"
               className="w-36 h-36 sm:w-48 sm:h-48 rounded-2xl object-cover border-4 border-zinc-900 shadow-2xl hover-glow"
             />
             <div>
-              <h1 className="text-3xl sm:text-5xl font-bold mb-3 text-glow">{actor.name}</h1>
+              <h1 className="text-3xl sm:text-5xl font-bold mb-1 text-glow">{actor.name}</h1>
+              {actor.alternateNames && actor.alternateNames.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 mb-3 text-xs text-zinc-400">
+                  <span className="text-zinc-500">Also known as:</span>
+                  {actor.alternateNames.map((alt) => (
+                    <span
+                      key={alt}
+                      className="px-2 py-0.5 rounded-md bg-zinc-800/80 border border-zinc-700/50 text-zinc-300"
+                    >
+                      {alt}
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="flex flex-wrap items-center gap-4 text-sm">
                 <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-zinc-800">
                   <Star className="w-4 h-4 text-yellow-500 fill-current" />
@@ -202,6 +244,38 @@ export default async function ActorDetailsPage({ params }: ActorPageProps) {
 
             <FilmographyVirtualExplorer filmography={filmographyData} />
           </section>
+
+          {/* Similar Actors & Frequent Collaborators */}
+          {actor.similarActors && actor.similarActors.length > 0 && (
+            <section>
+              <h2 className="text-2xl font-bold mb-4 text-glow flex items-center gap-2">
+                <Users className="w-6 h-6 text-yellow-500" />
+                Frequent Collaborators & Similar Actors
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {actor.similarActors.map((sim) => (
+                  <Link
+                    key={sim.id}
+                    href={`/actor/${sim.id}`}
+                    className="flex items-center gap-4 bg-zinc-900/60 hover:bg-zinc-800/80 p-4 rounded-xl border border-zinc-800 transition-all hover:scale-[1.02] group"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={sim.image}
+                      alt={sim.name}
+                      className="w-14 h-14 rounded-full object-cover border border-zinc-700"
+                    />
+                    <div>
+                      <h3 className="font-semibold text-white group-hover:text-yellow-400 transition-colors">
+                        {sim.name}
+                      </h3>
+                      <p className="text-xs text-zinc-400">{sim.match}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </div>

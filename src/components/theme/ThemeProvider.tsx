@@ -9,6 +9,7 @@ interface ThemeContextType {
   theme: Theme;
   resolvedTheme: ResolvedTheme;
   setTheme: (theme: Theme) => void;
+  setRouteOverride: (override: Theme | null) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -30,12 +31,15 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({ children, initialTheme = "dark" }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(initialTheme);
+  const [routeOverride, setRouteOverride] = useState<Theme | null>(null);
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
     if (initialTheme === "auto") {
       return resolveSystemTheme();
     }
     return initialTheme as ResolvedTheme;
   });
+
+  const effectiveTheme = routeOverride || theme;
 
   const applyTheme = useCallback((targetTheme: Theme) => {
     let resolved: ResolvedTheme = "dark";
@@ -64,23 +68,36 @@ export function ThemeProvider({ children, initialTheme = "dark" }: ThemeProvider
   const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
     setCookie("theme", newTheme);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("theme", newTheme);
+      } catch {
+        // ignore
+      }
+      // Async user profile persistence
+      fetch("/api/user/theme", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ theme: newTheme }),
+      }).catch(() => {});
+    }
     applyTheme(newTheme);
   }, [applyTheme]);
 
-  // Handle system color scheme change if auto
+  // Handle system color scheme change if auto or routeOverride change
   useEffect(() => {
-    applyTheme(theme);
+    applyTheme(effectiveTheme);
 
-    if (theme === "auto") {
+    if (effectiveTheme === "auto") {
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
       const handler = () => applyTheme("auto");
       mediaQuery.addEventListener("change", handler);
       return () => mediaQuery.removeEventListener("change", handler);
     }
-  }, [theme, applyTheme]);
+  }, [effectiveTheme, applyTheme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, setRouteOverride }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -92,4 +109,18 @@ export function useTheme() {
     throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
+}
+
+/**
+ * Per-route theme override hook (e.g. trailer modal in dark, docs in light)
+ */
+export function useRouteTheme(overrideTheme: Theme) {
+  const { setRouteOverride } = useTheme();
+
+  useEffect(() => {
+    setRouteOverride(overrideTheme);
+    return () => {
+      setRouteOverride(null);
+    };
+  }, [overrideTheme, setRouteOverride]);
 }

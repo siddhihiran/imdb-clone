@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "npx tsx scripts/verify-all-6-features.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.102.8",

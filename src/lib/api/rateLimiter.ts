@@ -46,6 +46,19 @@ export class TokenBucketRateLimiter {
     });
   }
 
+  tryAcquire(cost = 1): boolean {
+    this.refill();
+    if (this.tokens >= cost) {
+      this.tokens -= cost;
+      return true;
+    }
+    return false;
+  }
+
+  isAllowed(_key?: string): boolean {
+    return this.tryAcquire(1);
+  }
+
   getAvailableTokens(): number {
     this.refill();
     return Math.floor(this.tokens);
@@ -56,3 +69,5 @@ export const globalRateLimiter = new TokenBucketRateLimiter({
   capacity: 40,
   refillRate: 15,
 });
+
+export const rateLimiter = globalRateLimiter;

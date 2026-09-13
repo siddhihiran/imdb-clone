@@ -1,4 +1,5 @@
 import React, { Suspense } from "react";
+import Link from "next/link";
 import {
   Award,
   BarChart3,
@@ -10,6 +11,8 @@ import {
   Share2,
   Star,
   Film,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Metadata } from "next";
 import { movieApi } from "@/lib/api/client";
@@ -83,8 +86,71 @@ export default async function MovieDetailsPage({ params }: MoviePageProps) {
     "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=80",
   ].filter(Boolean) as string[];
 
+  // Calculate adjacent movie IDs for keyed preloading
+  const currentNum = parseInt(params.id, 10) || 1;
+  const prevId = currentNum > 1 ? currentNum - 1 : null;
+  const nextId = currentNum + 1;
+
+  // JSON-LD Structured Data for Movie
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Movie",
+    name: movie.title,
+    description: movie.description,
+    image: movie.image,
+    dateCreated: movie.releaseDate,
+    director: movie.director
+      ? {
+          "@type": "Person",
+          name: movie.director,
+        }
+      : undefined,
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: movie.rating,
+      bestRating: 10,
+      worstRating: 1,
+      ratingCount: 150000,
+    },
+  };
+
   return (
     <div>
+      {/* Structured Data (JSON-LD) for Movie */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      {/* Keyed Adjacent Movie Preloading Navigation */}
+      <div className="bg-zinc-950/80 border-b border-zinc-800/80 backdrop-blur-md sticky top-16 z-30 py-2 px-4">
+        <div className="container mx-auto flex items-center justify-between text-sm">
+          {prevId ? (
+            <Link
+              href={`/movie/${prevId}`}
+              prefetch={true}
+              className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors py-1 px-3 rounded-lg hover:bg-zinc-800/60"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Previous Movie</span>
+            </Link>
+          ) : (
+            <div />
+          )}
+          <span className="text-xs text-zinc-500 hidden sm:inline font-mono">
+            Movie #{movie.id}
+          </span>
+          <Link
+            href={`/movie/${nextId}`}
+            prefetch={true}
+            className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors py-1 px-3 rounded-lg hover:bg-zinc-800/60"
+          >
+            <span>Next Movie</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+
       {/* Hero Banner Section */}
       <div className="relative h-[90vh]">
         <div
