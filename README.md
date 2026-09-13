@@ -66,7 +66,7 @@ The platform is engineered with production-ready architecture: Server Components
 ## 📂 Project Structure
 
 ```
-imdb-clone-frontend/
+imdb-clone/
 ├── public/                     # Static public assets
 ├── src/
 │   ├── app/                    # Next.js App Router
@@ -124,7 +124,7 @@ imdb-clone-frontend/
 ```bash
 # Clone the repository
 git clone https://github.com/siddhihiran/imdb-clone.git
-cd imdb-clone/imdb-clone-frontend
+cd imdb-clone
 
 # Install dependencies
 npm install
@@ -154,6 +154,12 @@ Test and run the optimized production bundle:
 npm run build
 npm start
 ```
+
+### Deploying to Vercel
+1. Import repository `siddhihiran/imdb-clone` into [Vercel](https://vercel.com/).
+2. Keep **Root Directory** as `./` (default root).
+3. Framework Preset: **Next.js** (auto-detected).
+4. Click **Deploy**.
 
 ---
 
